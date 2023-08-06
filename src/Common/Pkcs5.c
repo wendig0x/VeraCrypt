@@ -643,7 +643,7 @@ void hmac_blake512
 		buf[b] = (char) (k[b] ^ 0x36);
 	memset (&buf[lk], 0x36, BLAKE512_BLOCKSIZE - lk);
 
-	blake2s_update (ctx, (unsigned char *) buf, BLAKE512_BLOCKSIZE);
+	blake512_update (ctx, (unsigned char *) buf, BLAKE512_BLOCKSIZE);
 
 	/**** Precompute HMAC Outer Digest ****/
 
