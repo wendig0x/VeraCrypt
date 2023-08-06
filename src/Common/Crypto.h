@@ -54,12 +54,16 @@ enum
 	WHIRLPOOL,
 	SHA256,
 	BLAKE2S,
+	BLAKE512,
 	STREEBOG,
 	HASH_ENUM_END_ID
 };
 
 // The last PRF to try when mounting and also the number of implemented PRFs
 #define LAST_PRF_ID			(HASH_ENUM_END_ID - 1)	
+
+#define BLAKE512_BLOCKSIZE		64
+#define BLAKE512_DIGESTSIZE		64
 
 #define BLAKE2S_BLOCKSIZE		64
 #define BLAKE2S_DIGESTSIZE		32
@@ -200,6 +204,7 @@ typedef struct
 #include "Twofish.h"
 
 #include "blake2.h"
+#include "blake.h"
 #ifndef TC_WINDOWS_BOOT
 #	include "Sha2.h"
 #	include "Whirlpool.h"

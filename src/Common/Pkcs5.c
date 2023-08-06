@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #endif
 #include "blake2.h"
+#include "blake.h"
 #ifndef TC_WINDOWS_BOOT
 #include "Sha2.h"
 #include "Whirlpool.h"
@@ -549,6 +550,280 @@ void derive_key_sha512 (char *pwd, int pwd_len, char *salt, int salt_len, uint32
 }
 
 #endif // TC_WINDOWS_BOOT
+
+#if !defined(TC_WINDOWS_BOOT) || defined(TC_WINDOWS_BOOT_BLAKE512)
+
+typedef struct hmac_blake512_ctx_struct
+{
+	state512 ctx;
+	state512 inner_digest_ctx; /*pre-computed inner digest context */
+	state512 outer_digest_ctx; /*pre-computed outer digest context */
+	char k[PKCS5_SALT_SIZE + 4]; /* enough to hold (salt_len + 4) and also the Blake-512 hash */
+	char u[BLAKE512_DIGESTSIZE];
+} hmac_blake512_ctx;
+
+void hmac_blake512_internal
+(
+	  char *d,		/* input data. d pointer is guaranteed to be at least 32-bytes long */
+	  int ld,		/* length of input data in bytes */
+	  hmac_blake512_ctx* hmac /* HMAC-BLAKE-512 context which holds temporary variables */
+)
+{
+	state512* ctx = &(hmac->ctx);
+
+	/**** Restore Precomputed Inner Digest Context ****/
+
+	memcpy (ctx, &(hmac->inner_digest_ctx), sizeof (state512));
+
+	blake512_update (ctx, d, ld);
+
+	blake512_final (ctx, (unsigned char*) d); /* d = inner digest */
+
+	/**** Restore Precomputed Outer Digest Context ****/
+
+	memcpy (ctx, &(hmac->outer_digest_ctx), sizeof (state512));
+
+	blake512_update (ctx, d, BLAKE512_DIGESTSIZE);
+
+	blake512_final (ctx, (unsigned char *) d); /* d = outer digest */
+}
+
+
+#ifndef TC_WINDOWS_BOOT
+
+
+void hmac_blake512
+(
+	char *k,    /* secret key */
+	int lk,    /* length of the key in bytes */
+	char *d,    /* data */
+	int ld    /* length of data in bytes */
+)
+{
+	hmac_blake512_ctx hmac;
+	state512* ctx;
+	char* buf = hmac.k;
+	int b;
+	char key[BLAKE512_DIGESTSIZE];
+#if defined (DEVICE_DRIVER)
+	NTSTATUS saveStatus = STATUS_INVALID_PARAMETER;
+#ifdef _WIN64
+	XSTATE_SAVE SaveState;
+	if (IsCpuIntel() && HasSAVX())
+		saveStatus = KeSaveExtendedProcessorStateVC(XSTATE_MASK_GSSE, &SaveState);
+#else
+	KFLOATING_SAVE floatingPointState;	
+	if (HasSSE2())
+		saveStatus = KeSaveFloatingPointState (&floatingPointState);
+#endif
+#endif
+    /* If the key is longer than the hash algorithm block size,
+	   let key = blake-512(key), as per HMAC specifications. */
+	if (lk > BLAKE512_BLOCKSIZE)
+	{
+		state512 tctx;
+
+		blake512_init (&tctx);
+		blake512_update (&tctx, k, lk);
+		blake512_final (&tctx, (unsigned char *) key);
+
+		k = key;
+		lk = BLAKE512_DIGESTSIZE;
+
+		burn (&tctx, sizeof(tctx));		// Prevent leaks
+	}
+
+	/**** Precompute HMAC Inner Digest ****/
+
+	ctx = &(hmac.inner_digest_ctx);
+	blake512_init (ctx);
+
+	/* Pad the key for inner digest */
+	for (b = 0; b < lk; ++b)
+		buf[b] = (char) (k[b] ^ 0x36);
+	memset (&buf[lk], 0x36, BLAKE512_BLOCKSIZE - lk);
+
+	blake2s_update (ctx, (unsigned char *) buf, BLAKE512_BLOCKSIZE);
+
+	/**** Precompute HMAC Outer Digest ****/
+
+	ctx = &(hmac.outer_digest_ctx);
+	blake512_init (ctx);
+
+	for (b = 0; b < lk; ++b)
+		buf[b] = (char) (k[b] ^ 0x5C);
+	memset (&buf[lk], 0x5C, BLAKE512_BLOCKSIZE - lk);
+
+	blake512_update (ctx, (unsigned char *) buf, BLAKE512_BLOCKSIZE);
+
+	hmac_blake512_internal(d, ld, &hmac);
+
+#if defined (DEVICE_DRIVER)
+	if (NT_SUCCESS (saveStatus))
+#ifdef _WIN64
+		KeRestoreExtendedProcessorStateVC(&SaveState);
+#else
+		KeRestoreFloatingPointState (&floatingPointState);
+#endif
+#endif
+
+	/* Prevent leaks */
+	burn(&hmac, sizeof(hmac));
+	burn(key, sizeof(key));
+}
+#endif
+
+static void derive_u_blake512 (char *salt, int salt_len, uint32 iterations, int b, hmac_blake512_ctx* hmac)
+{
+	char* k = hmac->k;
+	char* u = hmac->u;
+	uint32 c;
+	int i;	
+
+#ifdef TC_WINDOWS_BOOT
+	/* In bootloader mode, least significant bit of iterations is a boolean (TRUE for boot derivation mode, FALSE otherwise)
+	 * and the most significant 16 bits hold the pim value
+	 * This enables us to save code space needed for implementing other features.
+	 */
+	c = iterations >> 16;
+	i = ((int) iterations) & 0x01;
+	if (i)
+		c = (c == 0)? 200000 : c << 11;
+	else
+		c = (c == 0)? 500000 : 15000 + c * 1000;
+#else
+	c = iterations;
+#endif
+
+	/* iteration 1 */
+	memcpy (k, salt, salt_len);	/* salt */
+	
+	/* big-endian block number */
+#ifdef TC_WINDOWS_BOOT
+    /* specific case of 16-bit bootloader: b is a 16-bit integer that is always < 256 */
+	memset (&k[salt_len], 0, 3);
+	k[salt_len + 3] = (char) b;
+#else
+    b = bswap_32 (b);
+    memcpy (&k[salt_len], &b, 4);
+#endif	
+
+	hmac_blake512_internal (k, salt_len + 4, hmac);
+	memcpy (u, k, BLAKE512_DIGESTSIZE);
+
+	/* remaining iterations */
+	while (c > 1)
+	{
+		hmac_blake512_internal (k, BLAKE512_DIGESTSIZE, hmac);
+		for (i = 0; i < BLAKE512_DIGESTSIZE; i++)
+		{
+			u[i] ^= k[i];
+		}
+		c--;
+	}
+}
+
+
+void derive_key_blake512 (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen)
+{	
+	hmac_blake512_ctx hmac;
+	state512* ctx;
+	char* buf = hmac.k;
+	int b, l, r;
+#ifndef TC_WINDOWS_BOOT
+	char key[BLAKE512_DIGESTSIZE];
+#if defined (DEVICE_DRIVER)
+	NTSTATUS saveStatus = STATUS_INVALID_PARAMETER;
+#ifdef _WIN64
+	XSTATE_SAVE SaveState;
+	if (IsCpuIntel() && HasSAVX())
+		saveStatus = KeSaveExtendedProcessorStateVC(XSTATE_MASK_GSSE, &SaveState);
+#else
+	KFLOATING_SAVE floatingPointState;	
+	if (HasSSE2())
+		saveStatus = KeSaveFloatingPointState (&floatingPointState);
+#endif
+#endif
+    /* If the password is longer than the hash algorithm block size,
+	   let pwd = blake-512(pwd), as per HMAC specifications. */
+	if (pwd_len > BLAKE512_BLOCKSIZE)
+	{
+		state512 tctx;
+
+		blake512_init (&tctx);
+		blake512_update (&tctx, pwd, pwd_len);
+		blake512_final (&tctx, (unsigned char *) key);
+
+		pwd = key;
+		pwd_len = BLAKE512_DIGESTSIZE;
+
+		burn (&tctx, sizeof(tctx));		// Prevent leaks
+	}
+#endif
+
+	if (dklen % BLAKE512_DIGESTSIZE)
+	{
+		l = 1 + dklen / BLAKE512_DIGESTSIZE;
+	}
+	else
+	{
+		l = dklen / BLAKE512_DIGESTSIZE;
+	}
+
+	r = dklen - (l - 1) * BLAKE512_DIGESTSIZE;
+
+	/**** Precompute HMAC Inner Digest ****/
+
+	ctx = &(hmac.inner_digest_ctx);
+	blake512_init (ctx);
+
+	/* Pad the key for inner digest */
+	for (b = 0; b < pwd_len; ++b)
+		buf[b] = (char) (pwd[b] ^ 0x36);
+	memset (&buf[pwd_len], 0x36, BLAKE512_BLOCKSIZE - pwd_len);
+
+	blake512_update (ctx, buf, BLAKE512_BLOCKSIZE);
+
+	/**** Precompute HMAC Outer Digest ****/
+
+	ctx = &(hmac.outer_digest_ctx);
+	blake512_init (ctx);
+
+	for (b = 0; b < pwd_len; ++b)
+		buf[b] = (char) (pwd[b] ^ 0x5C);
+	memset (&buf[pwd_len], 0x5C, BLAKE512_BLOCKSIZE - pwd_len);
+
+	blake512_update (ctx, buf, BLAKE512_BLOCKSIZE);
+
+	/* first l - 1 blocks */
+	for (b = 1; b < l; b++)
+	{
+		derive_u_blake512 (salt, salt_len, iterations, b, &hmac);
+		memcpy (dk, hmac.u, BLAKE512_DIGESTSIZE);
+		dk += BLAKE512_DIGESTSIZE;
+	}
+
+	/* last block */
+	derive_u_blake512 (salt, salt_len, iterations, b, &hmac);
+	memcpy (dk, hmac.u, r);
+
+#if defined (DEVICE_DRIVER)
+	if (NT_SUCCESS (saveStatus))
+#ifdef _WIN64
+		KeRestoreExtendedProcessorStateVC(&SaveState);
+#else
+		KeRestoreFloatingPointState (&floatingPointState);
+#endif
+#endif
+
+	/* Prevent possible leaks. */
+	burn (&hmac, sizeof(hmac));
+#ifndef TC_WINDOWS_BOOT
+	burn (key, sizeof(key));
+#endif
+}
+
+#endif
 
 #if !defined(TC_WINDOWS_BOOT) || defined(TC_WINDOWS_BOOT_BLAKE2S)
 
@@ -1262,6 +1537,9 @@ wchar_t *get_pkcs5_prf_name (int pkcs5_prf_id)
 	case SHA256:	
 		return L"HMAC-SHA-256";
 
+	case BLAKE512:	
+		return L"HMAC-BLAKE-512";
+
 	case BLAKE2S:	
 		return L"HMAC-BLAKE2s-256";
 
@@ -1288,6 +1566,9 @@ int get_pkcs5_iteration_count (int pkcs5_prf_id, int pim, BOOL bBoot)
 
 	switch (pkcs5_prf_id)
 	{
+
+	case BLAKE512:	
+		return ((pim == 0)? 500000 : 15000 + pim * 1000);
 
 	case BLAKE2S:	
 		if (pim == 0)

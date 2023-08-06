@@ -48,6 +48,23 @@ namespace VeraCrypt
 		Pkcs5Kdf &operator= (const Pkcs5Kdf &);
 	};
 
+	class Pkcs5HmacBlake512 : public Pkcs5Kdf
+	{
+	public:
+		Pkcs5HmacBlake512 () : Pkcs5Kdf() { }
+		virtual ~Pkcs5HmacBlake512 () { }
+
+		virtual void DeriveKey (const BufferPtr &key, const VolumePassword &password, const ConstBufferPtr &salt, int iterationCount) const;
+		virtual shared_ptr <Hash> GetHash () const { return shared_ptr <Hash> (new Blake512); }
+		virtual int GetIterationCount (int pim) const { return pim <= 0 ? 500000 : (15000 + (pim * 1000)); }
+		virtual wstring GetName () const { return L"HMAC-BLAKE-512"; }
+		virtual Pkcs5Kdf* Clone () const { return new Pkcs5HmacBlake512(); }
+
+	private:
+		Pkcs5HmacBlake512 (const Pkcs5HmacBlake512 &);
+		Pkcs5HmacBlake512 &operator= (const Pkcs5HmacBlake512 &);
+	};
+
 	class Pkcs5HmacBlake2s_Boot : public Pkcs5Kdf
 	{
 	public:

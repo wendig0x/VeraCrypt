@@ -13,6 +13,7 @@
 #include "Hash.h"
 
 #include "Crypto/blake2.h"
+#include "Crypto/blake.h"
 #include "Crypto/Sha2.h"
 #include "Crypto/Whirlpool.h"
 #include "Crypto/Streebog.h"
@@ -25,6 +26,7 @@ namespace VeraCrypt
 
 		l.push_back (shared_ptr <Hash> (new Sha512 ()));
 		l.push_back (shared_ptr <Hash> (new Whirlpool ()));
+		l.push_back (shared_ptr <Hash> (new Blake512 ()));
 		l.push_back (shared_ptr <Hash> (new Blake2s ()));
 		l.push_back (shared_ptr <Hash> (new Sha256 ()));
 		l.push_back (shared_ptr <Hash> (new Streebog ()));
@@ -44,7 +46,31 @@ namespace VeraCrypt
 			throw ParameterIncorrect (SRC_POS);
 	}
 
-	// RIPEMD-160
+	// BLAKE-512
+	Blake512::Blake512 ()
+	{
+		Context.Allocate (sizeof (state512), 64);
+		Init();
+	}
+
+	void Blake512::GetDigest (const BufferPtr &buffer)
+	{
+		if_debug (ValidateDigestParameters (buffer));
+		blake512_final ((state512 *) Context.Ptr(), buffer);
+	}
+
+	void Blake512::Init ()
+	{
+		blake512_init ((state512 *) Context.Ptr());
+	}
+
+	void Blake512::ProcessData (const ConstBufferPtr &data)
+	{
+		if_debug (ValidateDataParameters (data));
+		blake512_update ((state512 *) Context.Ptr(), data.Get(), data.Size());
+	}
+
+	// BLAKE2S-256
 	Blake2s::Blake2s ()
 	{
 		Context.Allocate (sizeof (blake2s_state), 32);

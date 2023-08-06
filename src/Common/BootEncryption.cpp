@@ -1722,6 +1722,8 @@ namespace VeraCrypt
 					pkcs5_prf = SHA256;
 				else if (_stricmp(request.BootPrfAlgorithmName, "BLAKE2s-256") == 0)
 					pkcs5_prf = BLAKE2S;
+				else if (_stricmp(request.BootPrfAlgorithmName, "BLAKE-512") == 0)
+					pkcs5_prf = BLAKE512;
 				else if (_stricmp(request.BootPrfAlgorithmName, "SHA-512") == 0)
 					pkcs5_prf = SHA512;
 				else if (_stricmp(request.BootPrfAlgorithmName, "Whirlpool") == 0)
@@ -2230,7 +2232,7 @@ namespace VeraCrypt
 	EfiBootConf::EfiBootConf() : passwordType (0),
 		passwordMsg ("Password: "),
 		passwordPicture ("login.bmp"),
-		hashMsg ("(0) TEST ALL (1) SHA512 (2) WHIRLPOOL (3) SHA256 (4) BLAKE2S (5) STREEBOG\nHash: "),
+		hashMsg ("(0) TEST ALL (1) SHA512 (2) WHIRLPOOL (3) SHA256 (4) BLAKE2S (5) BLAKE-512 (6) STREEBOG\nHash: "),
 		hashAlgo (0),
 		requestHash (0),
 		pimMsg ("PIM (Leave empty for default): "),

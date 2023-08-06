@@ -227,6 +227,7 @@ namespace VeraCrypt
 		Pkcs5KdfList l;
 		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacSha256_Boot ()));
 		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacBlake2s_Boot ()));
+		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacBlake512 ()));
 		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacSha512 ()));
 		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacWhirlpool ()));
 		l.push_back (shared_ptr <Pkcs5Kdf> (new Pkcs5HmacStreebog ()));

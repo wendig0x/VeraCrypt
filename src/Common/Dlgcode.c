@@ -6402,6 +6402,7 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 			BYTE digest [MAX_DIGESTSIZE];
 			WHIRLPOOL_CTX	wctx;
 			blake2s_state   bctx;
+			state512		b512ctx;
 			sha512_ctx		s2ctx;
 			sha256_ctx		s256ctx;
 			STREEBOG_CTX		stctx;
@@ -6428,6 +6429,12 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 						sha256_begin (&s256ctx);
 						sha256_hash (lpTestBuffer, benchmarkBufferSize, &s256ctx);
 						sha256_end ((unsigned char *) digest, &s256ctx);
+						break;
+						
+					case BLAKE512:
+						blake512_init(&b512ctx);
+						blake512_update(&b512ctx, lpTestBuffer, benchmarkBufferSize);
+						blake512_final(&b512ctx, (unsigned char *) digest);
 						break;
 
 					case BLAKE2S:
@@ -6496,6 +6503,11 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 				case SHA256:
 					/* PKCS-5 test with HMAC-SHA-256 used as the PRF */
 					derive_key_sha256 ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
+					break;
+
+				case BLAKE512:
+					/* PKCS-5 test with HMAC-BLAKE2s used as the PRF */
+					derive_key_blake512 ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
 					break;
 
 				case BLAKE2S:

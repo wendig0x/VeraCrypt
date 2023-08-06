@@ -264,6 +264,7 @@ BOOL Randmix ()
 		unsigned char hashOutputBuffer [MAX_DIGESTSIZE];
 		WHIRLPOOL_CTX	wctx;
 		blake2s_state   bctx;
+		state512   		b512ctx;
 		sha512_ctx		sctx;
 		sha256_ctx		s256ctx;
 		STREEBOG_CTX	stctx;
@@ -271,6 +272,11 @@ BOOL Randmix ()
 
 		switch (HashFunction)
 		{
+
+		case BLAKE512:
+			digestSize = BLAKE512_DIGESTSIZE;
+			break;
+
 		case BLAKE2S:
 			digestSize = BLAKE2S_DIGESTSIZE;
 			break;
@@ -303,6 +309,12 @@ BOOL Randmix ()
 			/* Compute the message digest of the entire pool using the selected hash function. */
 			switch (HashFunction)
 			{
+			case BLAKE512:
+				blake512_init(&b512ctx);
+				blake512_update(&b512ctx, pRandPool, RNG_POOL_SIZE);
+				blake512_final(&b512ctx, hashOutputBuffer);
+				break;
+
 			case BLAKE2S:
 				blake2s_init(&bctx);
 				blake2s_update(&bctx, pRandPool, RNG_POOL_SIZE);
@@ -349,6 +361,10 @@ BOOL Randmix ()
 		burn (hashOutputBuffer, MAX_DIGESTSIZE);
 		switch (HashFunction)
 		{
+		case BLAKE512:
+			burn (&b512ctx, sizeof(b512ctx));
+			break;
+			
 		case BLAKE2S:
 			burn (&bctx, sizeof(bctx));
 			break;
