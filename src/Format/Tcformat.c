@@ -4494,7 +4494,7 @@ BOOL CALLBACK PageDialogProc (HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 				SetFocus (GetDlgItem (hwndDlg, IDC_PIM));
 
-				SetWindowTextW (GetDlgItem (hwndDlg, IDC_BOX_HELP), GetString (SysEncInEffect () && hash_algo != SHA512 && hash_algo != WHIRLPOOL? "PIM_SYSENC_HELP" : "PIM_HELP"));
+				SetWindowTextW (GetDlgItem (hwndDlg, IDC_BOX_HELP), GetString (SysEncInEffect () && hash_algo != SHA512 && hash_algo != WHIRLPOOL && hash_algo != BLAKE512? "PIM_SYSENC_HELP" : "PIM_HELP"));
 
 				ToHyperlink (hwndDlg, IDC_LINK_PIM_INFO);
 

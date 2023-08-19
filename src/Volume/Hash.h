@@ -48,29 +48,6 @@ namespace VeraCrypt
 		Hash &operator= (const Hash &);
 	};
 
-	// Blake512
-	class Blake512 : public Hash
-	{
-	public:
-		Blake512 ();
-		virtual ~Blake512 () { }
-
-		virtual void GetDigest (const BufferPtr &buffer);
-		virtual size_t GetBlockSize () const { return 64; }
-		virtual size_t GetDigestSize () const { return 64; }
-		virtual wstring GetName () const { return L"BLAKE-512"; }
-		virtual wstring GetAltName () const { return L"BLAKE512"; }
-		virtual shared_ptr <Hash> GetNew () const { return shared_ptr <Hash> (new Blake512); }
-		virtual void Init ();
-		virtual void ProcessData (const ConstBufferPtr &data);
-
-	protected:
-
-	private:
-		Blake512 (const Blake512 &);
-		Blake512 &operator= (const Blake512 &);
-	};
-
 	// Blake2s
 	class Blake2s : public Hash
 	{
@@ -138,6 +115,29 @@ namespace VeraCrypt
 	private:
 		Sha512 (const Sha512 &);
 		Sha512 &operator= (const Sha512 &);
+	};
+
+	// BLAKE-512
+	class BLAKE512 : public Hash
+	{
+	public:
+		BLAKE512 ();
+		virtual ~BLAKE512 () { }
+
+		virtual void GetDigest (const BufferPtr &buffer);
+		virtual size_t GetBlockSize () const { return 128; }
+		virtual size_t GetDigestSize () const { return 512 / 8; }
+		virtual wstring GetName () const { return L"BLAKE-512"; }
+		virtual wstring GetAltName () const { return L"BLAKE512"; }
+		virtual shared_ptr <Hash> GetNew () const { return shared_ptr <Hash> (new BLAKE512); }
+		virtual void Init ();
+		virtual void ProcessData (const ConstBufferPtr &data);
+
+	protected:
+
+	private:
+		BLAKE512 (const BLAKE512 &);
+		BLAKE512 &operator= (const BLAKE512 &);
 	};
 
 	// Whirlpool

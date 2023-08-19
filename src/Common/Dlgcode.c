@@ -417,7 +417,7 @@ static WTHELPERPROVDATAFROMSTATEDATA WTHelperProvDataFromStateDataFn = NULL;
 static WTHELPERGETPROVSIGNERFROMCHAIN WTHelperGetProvSignerFromChainFn = NULL;
 static WTHELPERGETPROVCERTFROMCHAIN WTHelperGetProvCertFromChainFn = NULL;
 
-static unsigned char gpbSha256CodeSignCertFingerprint[64] = {
+static unsigned char gpbSha512CodeSignCertFingerprint[64] = {
 	0x9C, 0xA0, 0x21, 0xD3, 0x7C, 0x90, 0x61, 0x88, 0xEF, 0x5F, 0x99, 0x3D,
 	0x54, 0x9F, 0xB8, 0xCE, 0x72, 0x32, 0x4F, 0x57, 0x4F, 0x19, 0xD2, 0xA4,
 	0xDC, 0x84, 0xFF, 0xE2, 0x84, 0x2B, 0xD4, 0x30, 0xAB, 0xA7, 0xE4, 0x63,
@@ -426,13 +426,13 @@ static unsigned char gpbSha256CodeSignCertFingerprint[64] = {
 	0xDB, 0x6F, 0xC0, 0x62
 };
 
-static unsigned char gpbSha256MSCodeSignCertFingerprint[64] = {
-	0x9C, 0x96, 0x81, 0x3B, 0x88, 0x54, 0xCB, 0x81, 0xB5, 0x94, 0x40, 0x4E,
-	0x15, 0x81, 0x20, 0xA1, 0x19, 0x00, 0x4E, 0x49, 0x8A, 0xA8, 0x98, 0x13,
-	0x9D, 0xE2, 0x86, 0x6A, 0xC1, 0xFA, 0xD3, 0x00, 0x0D, 0xAC, 0xE9, 0xE3,
-	0x3B, 0xFC, 0x6B, 0x26, 0xCE, 0xC8, 0xE2, 0x36, 0x3B, 0x60, 0x9C, 0x8E,
-	0x0A, 0x2A, 0x74, 0x20, 0xD7, 0x4E, 0x0F, 0xEE, 0x2E, 0x79, 0xE2, 0xAF,
-	0x1C, 0x90, 0x0B, 0x9C
+static unsigned char gpbSha512MSCodeSignCertFingerprint[64] = {
+	0xEB, 0x76, 0x2E, 0xD3, 0x5B, 0x4A, 0xB1, 0x0E, 0xF5, 0x3B, 0x99, 0x4E,
+	0xC1, 0xF7, 0x48, 0x88, 0xF6, 0xA0, 0xE9, 0xAC, 0x32, 0x69, 0xCF, 0x20,
+	0xE1, 0x60, 0xC4, 0x0C, 0xEF, 0x01, 0x1F, 0xCB, 0x41, 0x95, 0x72, 0xB9,
+	0xED, 0x63, 0x0C, 0x6B, 0xB9, 0xE9, 0xA2, 0x72, 0xA6, 0x78, 0x96, 0x4C,
+	0x69, 0x9F, 0x90, 0x3F, 0xB1, 0x3C, 0x64, 0xF2, 0xAB, 0xCF, 0x14, 0x1D,
+	0xEC, 0x7C, 0xB0, 0xC7
 };
 
 
@@ -1081,8 +1081,8 @@ BOOL VerifyModuleSignature (const wchar_t* path)
 					BYTE hashVal[64];
 					sha512 (hashVal, pProviderCert->pCert->pbCertEncoded, pProviderCert->pCert->cbCertEncoded);
 
-					if (	(0 ==  memcmp (hashVal, gpbSha256CodeSignCertFingerprint, 64))
-						||	(0 ==  memcmp (hashVal, gpbSha256MSCodeSignCertFingerprint, 64))
+					if (	(0 ==  memcmp (hashVal, gpbSha512CodeSignCertFingerprint, 64))
+						||	(0 ==  memcmp (hashVal, gpbSha512MSCodeSignCertFingerprint, 64))
 						)
 					{
 						bResult = TRUE;
@@ -6402,10 +6402,10 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 			BYTE digest [MAX_DIGESTSIZE];
 			WHIRLPOOL_CTX	wctx;
 			blake2s_state   bctx;
-			state512		b512ctx;
+			blake512_state	b512ctx;
 			sha512_ctx		s2ctx;
 			sha256_ctx		s256ctx;
-			STREEBOG_CTX		stctx;
+			STREEBOG_CTX	stctx;
 
 			int hid, i;
 
@@ -6430,17 +6430,17 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 						sha256_hash (lpTestBuffer, benchmarkBufferSize, &s256ctx);
 						sha256_end ((unsigned char *) digest, &s256ctx);
 						break;
-						
-					case BLAKE512:
-						blake512_init(&b512ctx);
-						blake512_update(&b512ctx, lpTestBuffer, benchmarkBufferSize);
-						blake512_final(&b512ctx, (unsigned char *) digest);
-						break;
 
 					case BLAKE2S:
 						blake2s_init(&bctx);
 						blake2s_update(&bctx, lpTestBuffer, benchmarkBufferSize);
 						blake2s_final(&bctx, (unsigned char *) digest);
+						break;
+
+					case BLAKE512:
+						blake512_init(&b512ctx);
+						blake512_update(&b512ctx, lpTestBuffer, benchmarkBufferSize);
+						blake512_final(&b512ctx, (unsigned char *) digest);
 						break;
 
 					case WHIRLPOOL:
@@ -6505,14 +6505,14 @@ static BOOL PerformBenchmark(HWND hBenchDlg, HWND hwndDlg)
 					derive_key_sha256 ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
 					break;
 
-				case BLAKE512:
-					/* PKCS-5 test with HMAC-BLAKE2s used as the PRF */
-					derive_key_blake512 ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
-					break;
-
 				case BLAKE2S:
 					/* PKCS-5 test with HMAC-BLAKE2s used as the PRF */
 					derive_key_blake2s ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
+					break;
+
+				case BLAKE512:
+					/* PKCS-5 test with HMAC-BLAKE512 used as the PRF */
+					derive_key_blake512 ("passphrase-1234567890", 21, tmp_salt, 64, get_pkcs5_iteration_count(thid, benchmarkPim, benchmarkPreBoot), dk, MASTER_KEYDATA_SIZE);
 					break;
 
 				case WHIRLPOOL:
@@ -9263,6 +9263,17 @@ retry:
 		{
 			RemoveDeviceWriteProtection (hwndDlg, volumePath);
 		}
+	}
+
+	if (mount.VolumeMountedReadOnlyAfterPartialSysEnc
+		&& !Silent
+		&& bDevice)
+	{
+		wchar_t msg[1024];
+		wchar_t mountPoint[] = { L'A' + (wchar_t) driveNo, L':', 0 };
+		StringCbPrintfW (msg, sizeof(msg), GetString ("PARTIAL_SYSENC_MOUNT_READONLY"), mountPoint);
+
+		WarningDirect (msg, hwndDlg);
 	}
 
 	if (mount.wszLabel[0] && !mount.bDriverSetLabel)
@@ -13989,6 +14000,41 @@ BOOL SetPrivilege(LPTSTR szPrivilegeName, BOOL bEnable)
 	return bRet;
 }
 
+BOOL IsPrivilegeEnabled (LPTSTR szPrivilegeName)
+{
+	HANDLE hToken;
+	TOKEN_PRIVILEGES tkp;
+	BOOL bRet = FALSE;
+	DWORD dwLastError = 0;
+
+	if (OpenProcessToken(GetCurrentProcess(),
+		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+		&hToken))
+	{
+		if (LookupPrivilegeValue(NULL, szPrivilegeName,
+				&tkp.Privileges[0].Luid))
+		{
+			DWORD dwSize = sizeof (tkp);
+			if (GetTokenInformation (hToken, TokenPrivileges, &tkp, dwSize, &dwSize))
+			{
+				bRet = (tkp.Privileges[0].Attributes & SE_PRIVILEGE_ENABLED) != 0;
+			}
+			else
+				dwLastError = GetLastError ();
+		}
+		else
+			dwLastError = GetLastError ();
+
+		CloseHandle(hToken);
+	}
+	else
+		dwLastError = GetLastError ();
+
+	SetLastError (dwLastError);
+
+	return bRet;
+}
+
 BOOL DeleteDirectory (const wchar_t* szDirName)
 {
 	BOOL bStatus = RemoveDirectory (szDirName);
@@ -15751,6 +15797,56 @@ DWORD SendServiceNotification (DWORD dwNotificationCmd)
 		}
 		else
 			dwRet = GetLastError ();
+	}
+
+	return dwRet;
+}
+
+DWORD FastResizeFile (const wchar_t* filePath, __int64 fileSize)
+{
+	DWORD dwRet = ERROR_INVALID_PARAMETER;
+	if (filePath && fileSize > 0)
+	{
+		// we set required privileges to speedup file creation before we create the file so that the file handle inherits the privileges
+		BOOL bPrivilegesSet = IsPrivilegeEnabled (SE_MANAGE_VOLUME_NAME);
+		if (!bPrivilegesSet && !SetPrivilege(SE_MANAGE_VOLUME_NAME, TRUE))
+		{
+			dwRet = GetLastError ();
+		}
+		else
+		{
+			HANDLE dev = CreateFile (filePath, GENERIC_WRITE | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			if (dev != INVALID_HANDLE_VALUE)
+			{
+				LARGE_INTEGER liSize;
+				liSize.QuadPart = fileSize;
+				// Preallocate the file with desired size
+				if (!SetFilePointerEx (dev, liSize, NULL, FILE_BEGIN)
+					|| !SetEndOfFile (dev))
+				{
+					dwRet = GetLastError ();
+				}
+				else
+				{
+					if (!SetFileValidData (dev, fileSize))
+					{
+						dwRet = GetLastError ();
+					}
+					else
+					{
+						dwRet = ERROR_SUCCESS;
+					}
+				}
+
+				FlushFileBuffers (dev);
+				CloseHandle (dev);
+			}
+			else
+				dwRet = GetLastError ();
+			
+			if (!bPrivilegesSet)
+				SetPrivilege(SE_MANAGE_VOLUME_NAME, FALSE);
+		}
 	}
 
 	return dwRet;

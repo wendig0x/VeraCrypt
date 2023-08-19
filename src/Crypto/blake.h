@@ -27,14 +27,12 @@ typedef struct
   uint64_t h[8], s[4], t[2];
   int buflen, nullt;
   uint8_t buf[128];
-} state512;
-
-typedef state512 state384;
+} blake512_state;
 
   /* Streaming API */
-  void blake512_init( state512 *S );
-  void blake512_update( state512 *S, const void *in, size_t inlen );
-  void blake512_final( state512 *S, unsigned char *out );
+  void blake512_init( blake512_state *S );
+  void blake512_update( blake512_state *S, const void *in, size_t inlen );
+  void blake512_final( blake512_state *S, unsigned char *out );
 
   /* Simple API */
   void blake512( void *out, const void *in, size_t inlen );

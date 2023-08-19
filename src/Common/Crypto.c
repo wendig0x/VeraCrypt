@@ -120,10 +120,10 @@ static Hash Hashes[] =
 {	// ID				Name					Deprecated	System Encryption
 	{ SHA512,		L"SHA-512",				FALSE,	FALSE },
 	{ WHIRLPOOL,	L"Whirlpool",			FALSE,	FALSE },
-	{ BLAKE2S,		L"BLAKE2s-256",				FALSE,	TRUE },
-	{ BLAKE512,		L"BLAKE-512",				FALSE,	FALSE },
+	{ BLAKE2S,		L"BLAKE2s-256",			FALSE,	TRUE },
+	{ BLAKE512,		L"BLAKE-512",			FALSE,	TRUE },
 	{ SHA256,		L"SHA-256",				FALSE,	TRUE },
-	{ STREEBOG,		L"Streebog",	FALSE,	FALSE },
+	{ STREEBOG,		L"Streebog",			FALSE,	FALSE },
 	{ 0, 0, 0 }
 };
 #endif

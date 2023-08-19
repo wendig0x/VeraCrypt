@@ -369,12 +369,13 @@ KeyReady:	;
 
 			switch (pkcs5_prf)
 			{
-			case BLAKE512:
-				derive_key_blake512 (keyInfo->userKey, keyInfo->keyLength, keyInfo->salt,
-					PKCS5_SALT_SIZE, keyInfo->noIterations, dk, GetMaxPkcs5OutSize());
-				break;
 			case BLAKE2S:
 				derive_key_blake2s (keyInfo->userKey, keyInfo->keyLength, keyInfo->salt,
+					PKCS5_SALT_SIZE, keyInfo->noIterations, dk, GetMaxPkcs5OutSize());
+				break;
+
+			case BLAKE512:
+				derive_key_blake512 (keyInfo->userKey, keyInfo->keyLength, keyInfo->salt,
 					PKCS5_SALT_SIZE, keyInfo->noIterations, dk, GetMaxPkcs5OutSize());
 				break;
 
@@ -980,13 +981,13 @@ int CreateVolumeHeaderInMemory (HWND hwndDlg, BOOL bBoot, char *header, int ea, 
 				PKCS5_SALT_SIZE, keyInfo.noIterations, dk, GetMaxPkcs5OutSize());
 			break;
 
-		case BLAKE512:
-			derive_key_blake512 (keyInfo.userKey, keyInfo.keyLength, keyInfo.salt,
+		case BLAKE2S:
+			derive_key_blake2s (keyInfo.userKey, keyInfo.keyLength, keyInfo.salt,
 				PKCS5_SALT_SIZE, keyInfo.noIterations, dk, GetMaxPkcs5OutSize());
 			break;
 
-		case BLAKE2S:
-			derive_key_blake2s (keyInfo.userKey, keyInfo.keyLength, keyInfo.salt,
+		case BLAKE512:
+			derive_key_blake512 (keyInfo.userKey, keyInfo.keyLength, keyInfo.salt,
 				PKCS5_SALT_SIZE, keyInfo.noIterations, dk, GetMaxPkcs5OutSize());
 			break;
 

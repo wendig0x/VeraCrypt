@@ -2232,7 +2232,7 @@ namespace VeraCrypt
 	EfiBootConf::EfiBootConf() : passwordType (0),
 		passwordMsg ("Password: "),
 		passwordPicture ("login.bmp"),
-		hashMsg ("(0) TEST ALL (1) SHA512 (2) WHIRLPOOL (3) SHA256 (4) BLAKE2S (5) BLAKE-512 (6) STREEBOG\nHash: "),
+		hashMsg ("(0) TEST ALL (1) SHA512 (2) WHIRLPOOL (3) SHA256 (4) BLAKE2S (5) BLAKE512 (6) STREEBOG\nHash: "),
 		hashAlgo (0),
 		requestHash (0),
 		pimMsg ("PIM (Leave empty for default): "),

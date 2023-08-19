@@ -24,6 +24,10 @@ extern "C"
 void hmac_blake2s (char *key, int keylen, char *input_digest, int len);
 void derive_key_blake2s (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen);
 
+/* output written to input_digest which must be at lease 64 bytes long */
+void hmac_blake512 (char *key, int keylen, char *input_digest, int len);
+void derive_key_blake512 (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen);
+
 /* output written to d which must be at lease 32 bytes long */
 void hmac_sha256 (char *k, int lk, char *d, int ld);
 void derive_key_sha256 (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen);
@@ -32,10 +36,6 @@ void derive_key_sha256 (char *pwd, int pwd_len, char *salt, int salt_len, uint32
 /* output written to d which must be at lease 64 bytes long */
 void hmac_sha512 (char *k, int lk, char *d, int ld);
 void derive_key_sha512 (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen);
-
-/* output written to input_digest which must be at lease 64 bytes long */
-void hmac_blake512 (char *key, int keylen, char *input_digest, int len);
-void derive_key_blake512 (char *pwd, int pwd_len, char *salt, int salt_len, uint32 iterations, char *dk, int dklen);
 
 /* output written to d which must be at lease 64 bytes long */
 void hmac_whirlpool (char *k, int lk, char *d, int ld);

@@ -12,6 +12,7 @@
  */
 #include "blake.h"
 
+
 #define U8TO32_BIG(p)					      \
   (((uint32_t)((p)[0]) << 24) | ((uint32_t)((p)[1]) << 16) |  \
    ((uint32_t)((p)[2]) <<  8) | ((uint32_t)((p)[3])      ))
@@ -73,7 +74,7 @@ static const uint8_t padding[129] =
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-void blake512_compress( state512 *S, const uint8_t *block )
+void blake512_compress( blake512_state *S, const uint8_t *block )
 {
   uint64_t v[16], m[16], i;
 #define ROT(x,n) (((x)<<(64-n))|( (x)>>(n)))
@@ -129,7 +130,7 @@ void blake512_compress( state512 *S, const uint8_t *block )
 }
 
 
-void blake512_init( state512 *S )
+void blake512_init( blake512_state *S )
 {
   S->h[0] = 0x6a09e667f3bcc908ULL;
   S->h[1] = 0xbb67ae8584caa73bULL;
@@ -144,7 +145,7 @@ void blake512_init( state512 *S )
 }
 
 
-void blake512_update( state512 *S, const uint8_t *in, uint64_t inlen )
+void blake512_update( blake512_state *S, const uint8_t *in, uint64_t inlen )
 {
   int left = S->buflen;
   int fill = 128 - left;
@@ -186,7 +187,7 @@ void blake512_update( state512 *S, const uint8_t *in, uint64_t inlen )
 }
 
 
-void blake512_final( state512 *S, uint8_t *out )
+void blake512_final( blake512_state *S, uint8_t *out )
 {
   uint8_t msglen[16], zo = 0x01, oo = 0x81;
   uint64_t lo = S->t[0] + ( S->buflen << 3 ), hi = S->t[1];
@@ -239,7 +240,7 @@ void blake512_final( state512 *S, uint8_t *out )
 
 void blake512_hash( uint8_t *out, const uint8_t *in, uint64_t inlen )
 {
-  state512 S;
+  blake512_state S;
   blake512_init( &S );
   blake512_update( &S, in, inlen );
   blake512_final( &S, out );

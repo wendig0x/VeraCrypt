@@ -248,14 +248,13 @@ static TC_THREAD_PROC EncryptionThreadProc (void *threadArg)
 		case DeriveKeyWork:
 			switch (workItem->KeyDerivation.Pkcs5Prf)
 			{
-
-			case BLAKE512:
-				derive_key_blake512 (workItem->KeyDerivation.Password, workItem->KeyDerivation.PasswordLength, workItem->KeyDerivation.Salt, PKCS5_SALT_SIZE,
+			case BLAKE2S:
+				derive_key_blake2s (workItem->KeyDerivation.Password, workItem->KeyDerivation.PasswordLength, workItem->KeyDerivation.Salt, PKCS5_SALT_SIZE,
 					workItem->KeyDerivation.IterationCount, workItem->KeyDerivation.DerivedKey, GetMaxPkcs5OutSize());
 				break;
 
-			case BLAKE2S:
-				derive_key_blake2s (workItem->KeyDerivation.Password, workItem->KeyDerivation.PasswordLength, workItem->KeyDerivation.Salt, PKCS5_SALT_SIZE,
+			case BLAKE512:
+				derive_key_blake512 (workItem->KeyDerivation.Password, workItem->KeyDerivation.PasswordLength, workItem->KeyDerivation.Salt, PKCS5_SALT_SIZE,
 					workItem->KeyDerivation.IterationCount, workItem->KeyDerivation.DerivedKey, GetMaxPkcs5OutSize());
 				break;
 

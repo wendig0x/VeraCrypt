@@ -12,8 +12,8 @@
 
 #include "Hash.h"
 
-#include "Crypto/blake2.h"
 #include "Crypto/blake.h"
+#include "Crypto/blake2.h"
 #include "Crypto/Sha2.h"
 #include "Crypto/Whirlpool.h"
 #include "Crypto/Streebog.h"
@@ -26,8 +26,8 @@ namespace VeraCrypt
 
 		l.push_back (shared_ptr <Hash> (new Sha512 ()));
 		l.push_back (shared_ptr <Hash> (new Whirlpool ()));
-		l.push_back (shared_ptr <Hash> (new Blake512 ()));
 		l.push_back (shared_ptr <Hash> (new Blake2s ()));
+		l.push_back (shared_ptr <Hash> (new Blake512 ()));
 		l.push_back (shared_ptr <Hash> (new Sha256 ()));
 		l.push_back (shared_ptr <Hash> (new Streebog ()));
 
@@ -46,31 +46,7 @@ namespace VeraCrypt
 			throw ParameterIncorrect (SRC_POS);
 	}
 
-	// BLAKE-512
-	Blake512::Blake512 ()
-	{
-		Context.Allocate (sizeof (state512), 64);
-		Init();
-	}
-
-	void Blake512::GetDigest (const BufferPtr &buffer)
-	{
-		if_debug (ValidateDigestParameters (buffer));
-		blake512_final ((state512 *) Context.Ptr(), buffer);
-	}
-
-	void Blake512::Init ()
-	{
-		blake512_init ((state512 *) Context.Ptr());
-	}
-
-	void Blake512::ProcessData (const ConstBufferPtr &data)
-	{
-		if_debug (ValidateDataParameters (data));
-		blake512_update ((state512 *) Context.Ptr(), data.Get(), data.Size());
-	}
-
-	// BLAKE2S-256
+	// RIPEMD-160
 	Blake2s::Blake2s ()
 	{
 		Context.Allocate (sizeof (blake2s_state), 32);
@@ -140,6 +116,30 @@ namespace VeraCrypt
 	{
 		if_debug (ValidateDataParameters (data));
 		sha512_hash (data.Get(), (int) data.Size(), (sha512_ctx *) Context.Ptr());
+	}
+
+	// BLAKE512
+	BLAKE512::BLAKE512 ()
+	{
+		Context.Allocate (sizeof (blake512_state), 32);
+		Init();
+	}
+
+	void BLAKE512::GetDigest (const BufferPtr &buffer)
+	{
+		if_debug (ValidateDigestParameters (buffer));
+		blake512_final ((blake512_state *) Context.Ptr(), buffer);
+	}
+
+	void BLAKE512::Init ()
+	{
+		blake512_init ((blake512_state *) Context.Ptr());
+	}
+
+	void BLAKE512::ProcessData (const ConstBufferPtr &data)
+	{
+		if_debug (ValidateDataParameters (data));
+		blake512_update ((blake512_state *) Context.Ptr(), data.Get(), (int) data.Size());
 	}
 
 	// Whirlpool

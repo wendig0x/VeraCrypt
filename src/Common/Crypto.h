@@ -62,11 +62,11 @@ enum
 // The last PRF to try when mounting and also the number of implemented PRFs
 #define LAST_PRF_ID			(HASH_ENUM_END_ID - 1)	
 
-#define BLAKE512_BLOCKSIZE		64
-#define BLAKE512_DIGESTSIZE		64
-
 #define BLAKE2S_BLOCKSIZE		64
 #define BLAKE2S_DIGESTSIZE		32
+
+#define BLAKE512_BLOCKSIZE		128
+#define BLAKE512_DIGESTSIZE		64
 
 #define SHA256_BLOCKSIZE		64
 #define SHA256_DIGESTSIZE		32
@@ -204,10 +204,10 @@ typedef struct
 #include "Twofish.h"
 
 #include "blake2.h"
-#include "blake.h"
 #ifndef TC_WINDOWS_BOOT
 #	include "Sha2.h"
 #	include "Whirlpool.h"
+#	include "blake.h"
 #	include "Streebog.h"
 #	include "kuznyechik.h"
 #	include "Camellia.h"
